@@ -1,0 +1,111 @@
+diff --git a/conversion/__init__.py b/conversion/__init__.py
+index d48861e..6ae3e51 100644
+--- a/conversion/__init__.py
++++ b/conversion/__init__.py
+@@ -34,6 +34,7 @@ TEXT_MODEL_MAP: dict[str, str] = {
+     "BertModel": "bert",
+     "BitnetForCausalLM": "bitnet",
+     "BitNetForCausalLM": "bitnet",
++    "BitNetModel": "bitnet",
+     "BloomForCausalLM": "bloom",
+     "BloomModel": "bloom",
+     "CamembertModel": "bert",
+diff --git a/conversion/bitnet.py b/conversion/bitnet.py
+index 82bcada..9715de8 100644
+--- a/conversion/bitnet.py
++++ b/conversion/bitnet.py
+@@ -8,18 +8,29 @@ if TYPE_CHECKING:
+ from .base import ModelBase, TextModel, gguf
+ 
+ 
+-@ModelBase.register("BitnetForCausalLM", "BitNetForCausalLM")
++@ModelBase.register("BitnetForCausalLM", "BitNetForCausalLM", "BitNetModel")
+ @ModelBase.example("microsoft/bitnet-b1.58-2B-4T")
+ class BitnetModel(TextModel):
+     model_arch = gguf.MODEL_ARCH.BITNET
+ 
+     def set_vocab(self):
+-        self._set_vocab_sentencepiece()
++        try:
++            self._set_vocab_sentencepiece()
++        except FileNotFoundError:
++            try:
++                self._set_vocab_llama_hf()
++            except (FileNotFoundError, TypeError):
++                self._set_vocab_gpt2()
+ 
+     def set_gguf_parameters(self):
+         super().set_gguf_parameters()
+         self.gguf_writer.add_rope_scaling_type(gguf.RopeScalingType.LINEAR)
+         self.gguf_writer.add_rope_scaling_factor(1.0)
++        self.gguf_writer.add_causal_attention(False)
++        hidden_act = self.hparams.get("hidden_act") or self.hparams.get("hidden_activation")
++        if hidden_act:
++            self.gguf_writer.add_hidden_act(hidden_act)
+ 
+     def weight_quant(self, weight: Tensor) -> Tensor:
+         dtype = weight.dtype
+diff --git a/gguf-py/gguf/tensor_mapping.py b/gguf-py/gguf/tensor_mapping.py
+index d2dfeec..e4fc2ab 100644
+--- a/gguf-py/gguf/tensor_mapping.py
++++ b/gguf-py/gguf/tensor_mapping.py
+@@ -1166,10 +1166,14 @@ class TensorNameMap:
+ 
+         MODEL_TENSOR.ATTN_SUB_NORM: (
+             "model.layers.{bid}.self_attn.inner_attn_ln",  # bitnet
++            "model.layers.{bid}.self_attn.attn_sub_norm",
++            "layers.{bid}.self_attn.attn_sub_norm",
+         ),
+ 
+         MODEL_TENSOR.FFN_SUB_NORM: (
+             "model.layers.{bid}.mlp.ffn_layernorm",  # bitnet
++            "model.layers.{bid}.mlp.ffn_sub_norm",
++            "layers.{bid}.mlp.ffn_sub_norm",
+         ),
+ 
+         MODEL_TENSOR.DEC_ATTN_NORM: (
+diff --git a/src/llama-model.cpp b/src/llama-model.cpp
+index e195f50..fd3dfac 100644
+--- a/src/llama-model.cpp
++++ b/src/llama-model.cpp
+@@ -1045,8 +1045,10 @@ static const std::map<std::string, llm_ffn_op_type> LLM_FFN_OP_TYPES_FROM_STRING
+     { "silu",   LLM_FFN_SWIGLU },
+     { "swish",  LLM_FFN_SWIGLU },
+     { "swiglu", LLM_FFN_SWIGLU },
+-    { "relu",   LLM_FFN_RELU   },
+-    { "reglu",  LLM_FFN_REGLU  },
++    { "relu",     LLM_FFN_RELU     },
++    { "relu2",    LLM_FFN_RELU_SQR },
++    { "relu_sqr", LLM_FFN_RELU_SQR },
++    { "reglu",    LLM_FFN_REGLU    },
+ };
+ 
+ llm_ffn_op_type llm_ffn_op_type_from_string(const std::string & name, llm_ffn_op_type fallback) {
+diff --git a/src/models/bitnet.cpp b/src/models/bitnet.cpp
+index c833027..89562ad 100644
+--- a/src/models/bitnet.cpp
++++ b/src/models/bitnet.cpp
+@@ -3,6 +3,16 @@
+ void llama_model_bitnet::load_arch_hparams(llama_model_loader & ml) {
+     ml.get_key(LLM_KV_ATTENTION_LAYERNORM_RMS_EPS, hparams.f_norm_rms_eps);
+ 
++    hparams.llm_ffn_op = LLM_FFN_SILU;
++    std::string hidden_act;
++    if (ml.get_key(LLM_KV_HIDDEN_ACT, hidden_act, false)) {
++        if (hidden_act == "relu2" || hidden_act == "relu_sqr") {
++            hparams.llm_ffn_op = LLM_FFN_RELU_SQR;
++        } else {
++            hparams.llm_ffn_op = llm_ffn_op_type_from_string(hidden_act, LLM_FFN_SILU);
++        }
++    }
++
+     switch (hparams.n_layer()) {
+         case 26: type = LLM_TYPE_3B; break;
+         default: type = LLM_TYPE_UNKNOWN;
+@@ -129,7 +139,7 @@ llama_model_bitnet::graph::graph(const llama_model & model, const llm_graph_para
+                 model.layers[il].ffn_gate, NULL, model.layers[il].ffn_gate_s,
+                 NULL,                      NULL, NULL,
+                 NULL,
+-                LLM_FFN_SILU, LLM_FFN_PAR, il);
++                hparams.llm_ffn_op, LLM_FFN_PAR, il);
+         cb(cur, "ffn_sub_out", il);
