@@ -1,0 +1,8 @@
+{
+  "architecture": "Rabe3 bidirectional BitNet 2.4B BF16 master/ternary-forward + Laya-style 2-layer option head",
+  "overall": {"accuracy": 0.741, "nll": 0.7456817626953125, "brier": 0.36360782384872437, "ece_15": 0.04561924423277379},
+  "per_task": {
+    "ag_news": {"n": 1000, "accuracy": 0.871, "nll": 0.4014301598072052, "brier": 0.19909149408340454, "ece_15": 0.0419118401110172},
+    "emotion": {"n": 1000, "accuracy": 0.611, "nll": 1.0899333953857422, "brier": 0.5281241536140442, "ece_15": 0.0535644452869892}
+  }
+}

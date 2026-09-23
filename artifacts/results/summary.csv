@@ -1,0 +1,8 @@
+run,encoding,unfrozen_blocks,epochs,best_val_accuracy,test_overall_accuracy,ag_news_accuracy,emotion_accuracy
+mean_pool_6b_6ep,separate_candidates_mean_pool,6,6,0.432,0.4650,0.285,0.645
+mean_pool_12b_4ep,separate_candidates_mean_pool,12,4,0.410,0.4335,0.281,0.586
+joint_span_6b_4ep,joint_option_span,6,4,0.747,0.7375,0.870,0.605
+joint_span_6b_6ep,joint_option_span,6,6,0.752,0.7480,0.875,0.621
+joint_span_12b_4ep,joint_option_span,12,4,0.747,0.7370,0.865,0.609
+joint_span_12b_6ep,joint_option_span,12,6,0.757,0.7410,0.871,0.611
+cpu_tq1_0,joint_option_span,6,6,,0.7400,0.869,0.611

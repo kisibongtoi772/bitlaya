@@ -1,0 +1,18 @@
+{
+  "stage_1_gguf_bf16_vs_gpu_bf16": {
+    "num_samples": 30,
+    "sequence_length_delta": 0,
+    "option_vector_cosine": {"mean": 0.99876, "min": 0.99728, "max": 0.99940},
+    "decision_head_prediction_match": {"accuracy_percentage": 93.3, "matched": 28, "total": 30},
+    "verdict": "PASS"
+  },
+  "stage_2_gguf_tq1_0_vs_gguf_bf16": {
+    "num_samples": 30,
+    "bf16_vs_tq1_cosine": {"mean": 0.99982, "min": 0.99950, "max": 0.99991},
+    "gpu_vs_tq1_cosine": {"mean": 0.99867, "min": 0.99735, "max": 0.99936},
+    "bf16_vs_tq1_prediction_match": {"accuracy_percentage": 100.0, "matched": 30, "total": 30},
+    "gpu_vs_tq1_prediction_match": {"accuracy_percentage": 93.3, "matched": 28, "total": 30},
+    "quantization_drift_percentage": 0.018,
+    "verdict": "PASS"
+  }
+}

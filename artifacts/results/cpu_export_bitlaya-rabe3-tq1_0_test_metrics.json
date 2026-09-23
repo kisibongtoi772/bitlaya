@@ -1,0 +1,23 @@
+{
+  "architecture": "BitLaya 2.4B TQ1_0 (Ternary 1.58-bit) + SharedDecisionHead",
+  "checkpoint": "6_blocks_6_epochs",
+  "split": "test",
+  "n_samples": 2000,
+  "overall_accuracy": 74.0,
+  "delta_vs_gpu_overall": -0.8,
+  "per_task": {
+    "ag_news": {"n": 1000, "accuracy": 86.9},
+    "emotion": {"n": 1000, "accuracy": 61.1}
+  },
+  "performance": {
+    "total_wall_time_s": 239.97,
+    "throughput_samples_per_s": 8.33,
+    "avg_latency_s": 1.888,
+    "p50_latency_s": 1.879,
+    "p90_latency_s": 2.145,
+    "workers": 16,
+    "threads_per_worker": 16
+  },
+  "resource": {"model_size_gb": 1.03, "model_size_mb": 1054.6, "peak_ram_gb": 4.28},
+  "baselines_gpu_bf16": {"overall_accuracy": 74.8, "ag_news": 87.5, "emotion": 62.1}
+}

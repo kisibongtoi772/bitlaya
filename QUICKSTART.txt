@@ -1,0 +1,14 @@
+1) python3 -m venv .venv && source .venv/bin/activate
+2) pip install -r requirements.txt
+3) cp config/experiment.env.example config/experiment.env
+4) Set DATA_DIR and adapt Slurm account/partition settings.
+5) sbatch scripts/00_download_model.sbatch
+6) sbatch scripts/01_train_gpu.sbatch
+7) sbatch scripts/02_eval_gpu.sbatch
+8) sbatch scripts/03_export_bf16.sbatch
+9) sbatch scripts/05_check_parity_bf16.sbatch
+10) sbatch scripts/03_export_tq1.sbatch
+11) sbatch scripts/06_check_parity_tq1.sbatch
+12) sbatch scripts/04_eval_cpu_export.sbatch
+
+Default public configuration: last 6/30 BitNet blocks, 6 epochs, joint option-span encoding.
