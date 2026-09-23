@@ -1,0 +1,10 @@
+.venv/
+artifacts/base_repo/
+artifacts/finetuned/
+artifacts/export/
+artifacts/cpu_embeddings/
+slurm-*.out
+slurm-*.err
+__pycache__/
+
+config/experiment.env
